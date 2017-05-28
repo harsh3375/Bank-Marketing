@@ -1,0 +1,342 @@
+---
+title: "project-1"
+author: "harsh"
+date: "5/20/2017"
+output: html_document
+---
+
+Question 1 - Import File ???bank-full.csv??? , ensure that categorical variables are imported as characters , not factors.
+Take a quick look at type of variables in the data.
+
+Import Project file
+Answer Question NO 1 (Q-1)
+Import File "bank-full.csv" 
+
+```{r}
+
+d = read.csv('bank-full.csv',sep= ";" ,stringsAsFactors = FALSE)
+str(d)
+library(dplyr)
+glimpse(d)
+head(d)
+
+```
+
+```{r}
+head(d,20)
+tail(d,20)
+```
+
+```{r}
+library(psych)
+summary(d)
+describe(d)
+```
+
+
+Question no 2:- Find out mean ,std deviations, q1 , q3 and IQR for the variables age and balance. Check if they are
+following normal distribution. If they are following normal distribution then calculate outlier limits as :
+mean ?? 3*sd, otherwise calculate outlier limits as [q1 - 1.5 * IQR, q3 + 1.5 * IQR]. Find out which
+observations exceed these limits, remove them from the data.
+
+
+Answer for question for 2
+#Find out mean ,std deviations, q1 , q3 and IQR for the variables age and balance. 
+
+```{r}
+library(stats)
+sapply(d[,c(1,6)],summary, header= TRUE)   # check Mean, q1 , q3
+```
+
+```{r}
+
+sapply(d[,c(1,6)],sd) # std deviations
+
+```
+
+
+```{r}
+
+sapply(d[c(1,6)],IQR) # IQR
+
+```
+Check they are following normal distribution.
+
+first we check hypothesis testing
+```{r}
+t.test(d$age,d$balance)
+var.test(d$age,d$balance)
+t.test(d$age,d$balance,var.equal = TRUE)
+```
+
+Normality Test
+
+```{r}
+library(nortest)
+x <- d$age
+y <- d$balance
+ad.test(x)
+ad.test(y)
+```
+
+Normal Quantile-Quantile plot for age
+```{r}
+qqnorm(x)
+qqline(x, col = "red")
+```
+Normal Quantile-Quantile plot for balance
+
+
+```{r}
+qqnorm(y)
+qqline(y, col = "red")
+```
+
+
+Note :  large portion of the data points do not fall on the straight line
+
+----------------------
+Visual Normality Test
+--------------------
+```{r}
+library(ggplot2)
+ab=data.frame(x,y)
+ggplot(ab,aes(x))+geom_density(color="red")+ stat_function(fun=dnorm,aes(x),color="green")+ ggtitle("Visual Normality Test for Age ")
+```
+
+
+```{r}
+ggplot(ab,aes(y))+geom_density(color="red")+ stat_function(fun=dnorm,aes(y),color="green")+ ggtitle("Visual Normality Test for Balance ")
+```
+
+
+```{r}
+quantile(d$age)
+age1 <- quantile(d$age)[3]-quantile(d$age)[2]
+age2 <- quantile(d$age)[4]-quantile(d$age)[3]
+print(age2-age1)
+print(age1==age2)
+```
+```{r}
+
+
+bal1 <- quantile(d$balance)[3]-quantile(d$balance)[2]
+bal2 <- quantile(d$balance)[4]-quantile(d$balance)[3]
+print(bal2-bal1)
+print(bal1==bal2)
+
+```
+
+calculate outlier limits as :
+mean ?? 3*sd, otherwise calculate outlier limits as [q1 - 1.5 * IQR, q3 + 1.5 * IQR].
+
+
+Plot histogram for variables age
+```{r}
+hist(d$age)
+```
+Plot histogram for variables alance
+```{r}
+hist(d$balance)
+```
+
+
+calculate  outlier limits for age
+
+```{r}
+c=1.5
+age = quantile(d$age)
+bal = quantile(d$balance)
+print("lower limit age")
+out.age1=age[2] - c * IQR(d$age) 
+out.age1
+print("upper limit age")
+out.age2 <- age[4] + c * IQR(d$age)
+out.age2
+
+
+```
+calculate  numbers of outliers  in age var
+```{r}
+print("number of outliers in age")
+sum(d$age <out.age1 | d$age>out.age2)
+outlier_value <- boxplot.stats(d$age)$out
+outlier_value
+```
+calculate  outlier limits for balance
+
+```{r}
+print("lower limit balance")
+out.bal1 <- bal[2] - c * IQR(d$balance)
+out.bal1
+print("upper limit balance")
+out.bal2 <- bal[4] + c * IQR(d$balance)
+out.bal2
+```
+calculate  numbers of outliers  in balance var
+
+```{r}
+sum(d$balance <out.bal1 | d$balance>out.bal2)
+outlier_value1 <- boxplot.stats(d$balance)$out
+outlier_value1
+```
+```{r}
+print("boxplot for age with outliers")
+boxplot(d$age)
+```
+
+```{r}
+print("boxplot for age without outliers")
+boxplot(d$age,outline = FALSE)
+```
+
+```{r}
+print("boxplot for balance with outliers")
+boxplot(d$balance)
+```
+
+```{r}
+print("boxplot for balance without outliers")
+boxplot(d$balance,outline = FALSE)
+```
+```{r}
+outlierReplace = function(dataframe, cols, rows, newValue = NA) {
+   if (any(rows)) { 
+           set(dataframe, rows, cols, newValue) }}
+outlierReplace(d, "age", which(d$age > out.age2), NA)
+outlierReplace(d, "age", which(d$age < out.age1), NA)
+outlierReplace(d, "balance", which(d$balance > out.bal2), NA)
+outlierReplace(d, "balance", which(d$balance < out.bal2), NA)
+describe(d)
+str(d)
+```
+
+```{r}
+#Ans for question 3
+#cross table for job and y
+t1=table(d$job, d$y)
+
+p1=prop.table(t1,1)
+
+round(p1,2)
+str(d)
+```
+
+
+```{r}
+#cross table for month  and y
+t2=table(d$month, d$y)
+p2=prop.table(t2,1)
+round(p2,2)
+```
+
+
+```{r}
+#clubbing of categories
+library(dplyr)
+set.seed(123)
+dnew=d%>%
+       mutate( job.j1=as.numeric(job %in% c("admin.","self-employed","unknown")),
+job.j2=as.numeric(job %in% c("housemaid","services")),
+blue.collar=as.numeric(job == "blue-collar"),
+entrep=as.numeric(job == "entrepreneur"),
+mngmt=as.numeric(job == "management"),
+ret=as.numeric(job == "retired"),
+tech  = as.numeric(job=="technician"),
+unemp=as.numeric(job == "unemployed"))%>%
+        select(-job)
+str(dnew)
+
+#creating new catgorical var for job 
+cate.job <- data.frame(dnew[,17:24])
+glimpse(cate.job)
+
+```
+
+
+```{r}
+str(dnew)[,24:33]
+#clubbing of categories
+set.seed(123)
+dnew=dnew%>%
+       mutate( month.m1=as.numeric(month %in% c("jun","jan","nov")),
+        aug1=as.numeric(month == "aug"),
+        july=as.numeric(month == "jul"),
+        feb1=as.numeric(month == "feb"),
+        may1=as.numeric(month == "may"),
+        apr1  = as.numeric(month=="apr"),
+        dec1=as.numeric(month == "dec"),
+        sep1=as.numeric(month == "sep"),
+        oct1=as.numeric(month == "oct"))%>%
+        select(-month)
+str(dnew)
+
+#creating new catgorical var for month 
+cate.month <- data.frame(dnew[,24:32])
+
+glimpse(cate.month)
+```
+QUESTION 4
+
+Write a
+function which takes a dataset and categorical variable names as input and returns dataset with dummy
+variables for that categorical variable.
+```{r}
+
+Dummies1=function(df,dvar){
+  
+  t=table(df[,dvar])
+  
+  t=sort(t)
+  
+  l2=names(t)[-1]
+  
+  for(l1 in l2){
+    name=paste(dvar,l1,sep=".")
+    name=gsub(" ","",name)
+    name=gsub("-","",name)
+    name=gsub("\\?","Q",name)
+    
+    df[,name]=as.numeric(df[,dvar]==l1)
+  }
+  
+  df[,dvar]=NULL
+  return(df)
+}
+
+##### 
+
+#df = Dummies1(df,"dvar")
+
+```
+
+Question 5  Create pi-chart for the variable education with response y as fill.
+
+```{r}
+library(ggplot2)
+ggplot(dnew, aes(x = "", fill = education)) + geom_bar() + coord_polar(theta = "y")
+```
+
+
+Question 6-Using function above [written in Q4] or otherwise create dummy variables for the categorical variables
+
+
+```{r}
+mydata <- d
+mydata <- Dummies1(mydata,"job")
+mydata <- Dummies1(mydata,"marital")
+mydata <- Dummies1(mydata,"education")
+mydata <- Dummies1(mydata,"default")
+mydata <- Dummies1(mydata,"housing")
+mydata <- Dummies1(mydata,"loan")
+mydata <- Dummies1(mydata,"contact")
+mydata <- Dummies1(mydata,"month")
+mydata <- Dummies1(mydata,"poutcome")
+mydata <- Dummies1(mydata,"y")
+str(mydata)
+```
+
+
+
+
+
